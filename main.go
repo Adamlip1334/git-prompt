@@ -4,17 +4,18 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 )
 
 const (
-	resetColor   = "\033[0m"
-	boldColor    = "\033[1m"
-	redColor     = "\033[31m"
-	greenColor   = "\033[32m"
-	yellowColor  = "\033[33m"
-	magentaColor = "\033[35m"
-	cyanColor    = "\033[36m"
+	resetColor  = "\033[0m"
+	grayColor   = "\033[38;5;243m"
+	lightBlue   = "\033[38;5;117m"
+	lightGreen  = "\033[38;5;114m"
+	lightRed    = "\033[38;5;174m"
+	lightYellow = "\033[38;5;186m"
+	lightCyan   = "\033[38;5;152m"
 )
 
 func main() {
@@ -27,18 +28,27 @@ func main() {
 
 		branch := getCurrentBranch()
 		status := getGitStatus()
+		modifiedFiles := getModifiedFilesCount()
+		aheadBehind := getAheadBehindStatus()
+		stashCount := getStashCount()
 
 		var branchColor string
 		if status == "clean" {
-			branchColor = greenColor
+			branchColor = lightGreen
 		} else if status == "dirty" {
-			branchColor = redColor
+			branchColor = lightRed
 		} else {
-			branchColor = yellowColor
+			branchColor = lightYellow
 		}
 
 		if branch != "" {
-			fmt.Printf("%s(%s%s%s) %s $ ", cyanColor, branchColor, branch, resetColor, dir)
+			fmt.Printf("%s(%s%s%s|%s%d%s|%s%s%s|%s%d%s)%s %s $ ",
+				grayColor,
+				branchColor, branch, grayColor,
+				lightYellow, modifiedFiles, grayColor,
+				lightBlue, aheadBehind, grayColor,
+				lightCyan, stashCount, grayColor,
+				resetColor, dir)
 		} else {
 			fmt.Printf("%s $ ", dir)
 		}
@@ -78,4 +88,37 @@ func getGitStatus() string {
 		return "clean"
 	}
 	return "dirty"
+}
+
+func getModifiedFilesCount() int {
+	cmd := exec.Command("git", "status", "--porcelain")
+	output, err := cmd.Output()
+	if err != nil {
+		return 0
+	}
+	return len(strings.Split(strings.TrimSpace(string(output)), "\n"))
+}
+
+func getAheadBehindStatus() string {
+	cmd := exec.Command("git", "rev-list", "--left-right", "--count", "HEAD...@{u}")
+	output, err := cmd.Output()
+	if err != nil {
+		return ""
+	}
+	counts := strings.Split(strings.TrimSpace(string(output)), "\t")
+	if len(counts) != 2 {
+		return ""
+	}
+	ahead, _ := strconv.Atoi(counts[0])
+	behind, _ := strconv.Atoi(counts[1])
+	return fmt.Sprintf("↑%d↓%d", ahead, behind)
+}
+
+func getStashCount() int {
+	cmd := exec.Command("git", "stash", "list")
+	output, err := cmd.Output()
+	if err != nil {
+		return 0
+	}
+	return len(strings.Split(strings.TrimSpace(string(output)), "\n"))
 }
