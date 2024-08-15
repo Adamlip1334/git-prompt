@@ -56,6 +56,10 @@ func main() {
 		var command string
 		fmt.Scanln(&command)
 
+		if command == "" {
+			continue
+		}
+
 		args := strings.Split(command, " ")
 
 		cmd := exec.Command(args[0], args[1:]...)
@@ -64,7 +68,9 @@ func main() {
 		cmd.Stderr = os.Stderr
 		err = cmd.Run()
 		if err != nil {
-			fmt.Println(err)
+			if _, ok := err.(*exec.ExitError); !ok {
+				fmt.Println("Command not found:", args[0])
+			}
 		}
 	}
 }
