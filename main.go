@@ -6,17 +6,38 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"runtime"
 )
 
-const (
-	resetColor  = "\033[0m"
-	grayColor   = "\033[38;5;243m"
-	lightBlue   = "\033[38;5;117m"
-	lightGreen  = "\033[38;5;114m"
-	lightRed    = "\033[38;5;174m"
-	lightYellow = "\033[38;5;186m"
-	lightCyan   = "\033[38;5;152m"
+var (
+	resetColor  string
+	grayColor   string
+	lightBlue   string
+	lightGreen  string
+	lightRed    string
+	lightYellow string
+	lightCyan   string
 )
+
+func init() {
+	if runtime.GOOS == "windows" {
+		resetColor = ""
+		grayColor = ""
+		lightBlue = ""
+		lightGreen = ""
+		lightRed = ""
+		lightYellow = ""
+		lightCyan = ""
+	} else {
+		resetColor = "\033[0m"
+		grayColor = "\033[38;5;243m"
+		lightBlue = "\033[38;5;117m"
+		lightGreen = "\033[38;5;114m"
+		lightRed = "\033[38;5;174m"
+		lightYellow = "\033[38;5;186m"
+		lightCyan = "\033[38;5;152m"
+	}
+}
 
 func main() {
 	for {
@@ -60,9 +81,15 @@ func main() {
 			continue
 		}
 
-		args := strings.Split(command, " ")
+		args := strings.Fields(command)
 
-		cmd := exec.Command(args[0], args[1:]...)
+		var cmd *exec.Cmd
+		if runtime.GOOS == "windows" {
+			cmd = exec.Command("cmd", "/C", command)
+		} else {
+			cmd = exec.Command(args[0], args[1:]...)
+		}
+
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -128,3 +155,4 @@ func getStashCount() int {
 	}
 	return len(strings.Split(strings.TrimSpace(string(output)), "\n"))
 }
+
