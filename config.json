@@ -1,0 +1,13 @@
+{
+  "promptFormat": "%s(%s%s%s|%s%d%s|%s%s%s|%s%d%s)%s %s $ ",
+  "theme": {
+    "resetColor": "\u001b[0m",
+    "grayColor": "\u001b[38;5;243m",
+    "lightBlue": "\u001b[38;5;117m",
+    "lightGreen": "\u001b[38;5;114m",
+    "lightRed": "\u001b[38;5;174m",
+    "lightYellow": "\u001b[38;5;186m",
+    "lightCyan": "\u001b[38;5;152m"
+  }
+}
+
