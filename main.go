@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strconv"
@@ -9,33 +11,61 @@ import (
 	"runtime"
 )
 
+type Theme struct {
+	ResetColor  string `json:"resetColor"`
+	GrayColor   string `json:"grayColor"`
+	LightBlue   string `json:"lightBlue"`
+	LightGreen  string `json:"lightGreen"`
+	LightRed    string `json:"lightRed"`
+	LightYellow string `json:"lightYellow"`
+	LightCyan   string `json:"lightCyan"`
+}
+
+type Config struct {
+	PromptFormat string `json:"promptFormat"`
+	Theme        Theme  `json:"theme"`
+}
+
 var (
-	resetColor  string
-	grayColor   string
-	lightBlue   string
-	lightGreen  string
-	lightRed    string
-	lightYellow string
-	lightCyan   string
+	config Config
 )
 
 func init() {
+	loadConfig()
 	if runtime.GOOS == "windows" {
-		resetColor = ""
-		grayColor = ""
-		lightBlue = ""
-		lightGreen = ""
-		lightRed = ""
-		lightYellow = ""
-		lightCyan = ""
-	} else {
-		resetColor = "\033[0m"
-		grayColor = "\033[38;5;243m"
-		lightBlue = "\033[38;5;117m"
-		lightGreen = "\033[38;5;114m"
-		lightRed = "\033[38;5;174m"
-		lightYellow = "\033[38;5;186m"
-		lightCyan = "\033[38;5;152m"
+		config.Theme.ResetColor = ""
+		config.Theme.GrayColor = ""
+		config.Theme.LightBlue = ""
+		config.Theme.LightGreen = ""
+		config.Theme.LightRed = ""
+		config.Theme.LightYellow = ""
+		config.Theme.LightCyan = ""
+	}
+}
+
+func loadConfig() {
+	defaultConfig := Config{
+		PromptFormat: "%s(%s%s%s|%s%d%s|%s%s%s|%s%d%s)%s %s $ ",
+		Theme: Theme{
+			ResetColor:  "\033[0m",
+			GrayColor:   "\033[38;5;243m",
+			LightBlue:   "\033[38;5;117m",
+			LightGreen:  "\033[38;5;114m",
+			LightRed:    "\033[38;5;174m",
+			LightYellow: "\033[38;5;186m",
+			LightCyan:   "\033[38;5;152m",
+		},
+	}
+
+	configFile, err := ioutil.ReadFile("config.json")
+	if err != nil {
+		config = defaultConfig
+		return
+	}
+
+	err = json.Unmarshal(configFile, &config)
+	if err != nil {
+		config = defaultConfig
 	}
 }
 
@@ -55,21 +85,21 @@ func main() {
 
 		var branchColor string
 		if status == "clean" {
-			branchColor = lightGreen
+			branchColor = config.Theme.LightGreen
 		} else if status == "dirty" {
-			branchColor = lightRed
+			branchColor = config.Theme.LightRed
 		} else {
-			branchColor = lightYellow
+			branchColor = config.Theme.LightYellow
 		}
 
 		if branch != "" {
-			fmt.Printf("%s(%s%s%s|%s%d%s|%s%s%s|%s%d%s)%s %s $ ",
-				grayColor,
-				branchColor, branch, grayColor,
-				lightYellow, modifiedFiles, grayColor,
-				lightBlue, aheadBehind, grayColor,
-				lightCyan, stashCount, grayColor,
-				resetColor, dir)
+			fmt.Printf(config.PromptFormat,
+				config.Theme.GrayColor,
+				branchColor, branch, config.Theme.GrayColor,
+				config.Theme.LightYellow, modifiedFiles, config.Theme.GrayColor,
+				config.Theme.LightBlue, aheadBehind, config.Theme.GrayColor,
+				config.Theme.LightCyan, stashCount, config.Theme.GrayColor,
+				config.Theme.ResetColor, dir)
 		} else {
 			fmt.Printf("%s $ ", dir)
 		}
