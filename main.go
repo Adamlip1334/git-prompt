@@ -19,6 +19,20 @@ var (
 	lightCyan   string
 )
 
+type PromptConfig struct {
+	ShowBranch           bool
+	ShowModifiedFiles    bool
+	ShowAheadBehind      bool
+	ShowStashCount       bool
+}
+
+var defaultConfig = PromptConfig{
+	ShowBranch:           true,
+	ShowModifiedFiles:    false,
+	ShowAheadBehind:      false,
+	ShowStashCount:       false,
+}
+
 func init() {
 	if runtime.GOOS == "windows" {
 		resetColor = ""
@@ -40,6 +54,8 @@ func init() {
 }
 
 func main() {
+	config := loadConfig()
+
 	for {
 		dir, err := os.Getwd()
 		if err != nil {
@@ -47,32 +63,9 @@ func main() {
 			return
 		}
 
-		branch := getCurrentBranch()
-		status := getGitStatus()
-		modifiedFiles := getModifiedFilesCount()
-		aheadBehind := getAheadBehindStatus()
-		stashCount := getStashCount()
+		prompt := buildPrompt(config)
 
-		var branchColor string
-		if status == "clean" {
-			branchColor = lightGreen
-		} else if status == "dirty" {
-			branchColor = lightRed
-		} else {
-			branchColor = lightYellow
-		}
-
-		if branch != "" {
-			fmt.Printf("%s(%s%s%s|%s%d%s|%s%s%s|%s%d%s)%s %s $ ",
-				grayColor,
-				branchColor, branch, grayColor,
-				lightYellow, modifiedFiles, grayColor,
-				lightBlue, aheadBehind, grayColor,
-				lightCyan, stashCount, grayColor,
-				resetColor, dir)
-		} else {
-			fmt.Printf("%s $ ", dir)
-		}
+		fmt.Printf("%s %s $ ", prompt, dir)
 
 		var command string
 		fmt.Scanln(&command)
@@ -100,6 +93,52 @@ func main() {
 			}
 		}
 	}
+}
+
+func buildPrompt(config PromptConfig) string {
+	var parts []string
+
+	if config.ShowBranch {
+		branch := getCurrentBranch()
+		if branch != "" {
+			status := getGitStatus()
+			var branchColor string
+			if status == "clean" {
+				branchColor = lightGreen
+			} else if status == "dirty" {
+				branchColor = lightRed
+			} else {
+				branchColor = lightYellow
+			}
+			parts = append(parts, fmt.Sprintf("%s%s%s", branchColor, branch, grayColor))
+		}
+	}
+
+	if config.ShowModifiedFiles {
+		modifiedFiles := getModifiedFilesCount()
+		parts = append(parts, fmt.Sprintf("%s%d%s", lightYellow, modifiedFiles, grayColor))
+	}
+
+	if config.ShowAheadBehind {
+		aheadBehind := getAheadBehindStatus()
+		if aheadBehind != "" {
+			parts = append(parts, fmt.Sprintf("%s%s%s", lightBlue, aheadBehind, grayColor))
+		}
+	}
+
+	if config.ShowStashCount {
+		stashCount := getStashCount()
+		parts = append(parts, fmt.Sprintf("%s%d%s", lightCyan, stashCount, grayColor))
+	}
+
+	if len(parts) > 0 {
+		return fmt.Sprintf("%s(%s)%s", grayColor, strings.Join(parts, "|"), resetColor)
+	}
+	return ""
+}
+
+func loadConfig() PromptConfig {
+	return defaultConfig
 }
 
 func getCurrentBranch() string {
