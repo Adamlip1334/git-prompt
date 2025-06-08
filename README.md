@@ -6,7 +6,7 @@ A simple Git prompt integration tool written in Go.
 
 1. Clone this repository:
    ```
-   git clone https://github.com/yourusername/git-prompt.git
+   git clone https://github.com/AdamLip1334/git-prompt.git
    ```
 2. Build the project:
    ```
